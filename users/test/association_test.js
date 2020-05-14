@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const assert = require('assert');
 const BlogPost = require('../src/BlogPost');
 const User = require('../src/User');
 const Comment = require('../src/Comment');
@@ -22,10 +23,30 @@ describe('Association', () => {
     );
   });
 
-  it.only('Save a relation between user and blogpost', (done) => {
-    User.findOne({ name: 'john' }).then((user) => {
-      console.log(user);
-      done();
-    });
+  it('Save a relation between user and blogpost', (done) => {
+    User.findOne({ name: 'john' })
+      .populate('blogPosts')
+      .then((user) => {
+        assert(user.blogPosts[0].title == 'Blog post title');
+        done();
+      });
+  });
+  it('Save a user graph', (done) => {
+    User.findOne({ name: 'john' })
+      .populate({
+        path: 'blogPosts',
+        populate: {
+          path: 'comments',
+          model: 'comment',
+          populate: {
+            path: 'user',
+            model: 'user',
+          },
+        },
+      })
+      .then((user) => {
+        assert(user.name === 'john');
+        done();
+      });
   });
 });
